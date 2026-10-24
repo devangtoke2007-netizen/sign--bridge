@@ -1,0 +1,774 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignSpeak - Live Sign Language Translator</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f3f6ff;
+  color: #172554;
+}
+
+header {
+  background: #182b70;
+  color: white;
+  padding: 18px 7%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.logo {
+  font-size: 25px;
+  font-weight: bold;
+}
+
+header button, .primary, .secondary {
+  border: none;
+  padding: 11px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+header button, .secondary {
+  background: white;
+  color: #182b70;
+}
+
+.primary {
+  background: #365be8;
+  color: white;
+  width: 100%;
+  margin-top: 12px;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.page {
+  display: none;
+  padding: 35px 7%;
+}
+
+.page.active {
+  display: block;
+}
+
+.login-box {
+  max-width: 420px;
+  margin: 45px auto;
+  padding: 30px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px #182b7018;
+}
+
+.login-box h1 {
+  margin-bottom: 12px;
+}
+
+.login-box p {
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+input {
+  display: block;
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  margin: 8px 0 16px;
+}
+
+label {
+  font-weight: bold;
+}
+
+.subtitle {
+  color: #64748b;
+  margin: 10px 0 25px;
+  line-height: 1.6;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 22px;
+}
+
+.card {
+  background: white;
+  border-radius: 15px;
+  padding: 22px;
+  box-shadow: 0 5px 20px #182b7010;
+  margin-bottom: 20px;
+  min-width: 0;
+}
+
+.card h2 {
+  margin-bottom: 15px;
+  font-size: 20px;
+}
+
+.camera-box {
+  background: #10182e;
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+video {
+  width: 100%;
+  display: block;
+  transform: scaleX(-1);
+}
+
+#cameraPlaceholder {
+  color: white;
+  text-align: center;
+  padding: 30px;
+  line-height: 1.7;
+}
+
+.status {
+  background: #eef2ff;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 14px 0;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+.output {
+  background: #eef2ff;
+  border-left: 5px solid #365be8;
+  padding: 18px;
+  min-height: 85px;
+  border-radius: 8px;
+  font-size: 21px;
+  overflow-wrap: anywhere;
+}
+
+.small {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.6;
+  margin-top: 12px;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.controls button {
+  flex: 1;
+  min-width: 110px;
+  margin: 0;
+}
+
+.alphabet {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.letter {
+  padding: 12px 2px;
+  background: #eef2ff;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: bold;
+  color: #182b70;
+}
+
+.sign-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.sign-button {
+  background: #eef2ff;
+  color: #182b70;
+  border: 1px solid #dbe4ff;
+  border-radius: 8px;
+  padding: 11px;
+  cursor: pointer;
+}
+
+.sign-button:hover {
+  background: #dce5ff;
+}
+
+footer {
+  text-align: center;
+  padding: 25px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+@media(max-width: 500px) {
+  .page {
+    padding: 25px 4%;
+  }
+
+  .login-box {
+    margin: 20px auto;
+    padding: 22px;
+  }
+
+  .alphabet {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">🤟 SignSpeak</div>
+  <div>
+    <span id="welcome" style="margin-right:12px"></span>
+    <button id="logoutBtn" hidden onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<!-- PAGE 1: LOGIN -->
+<section id="loginPage" class="page active">
+  <div class="login-box">
+    <h1>Welcome to SignSpeak</h1>
+    <p>
+      Communicate without barriers. Translate hand gestures into
+      text and speech using your camera.
+    </p>
+
+    <form id="loginForm">
+      <label for="username">Your name</label>
+      <input id="username" required placeholder="Enter your name"
+             autocomplete="name">
+
+      <label for="email">Email address</label>
+      <input id="email" type="email" required
+             placeholder="Enter your email" autocomplete="email">
+
+      <label for="password">Password</label>
+      <input id="password" type="password" required minlength="4"
+             placeholder="Enter any 4 or more characters"
+             autocomplete="current-password">
+
+      <button class="primary" type="submit">Login & Continue →</button>
+    </form>
+
+    <p class="small">
+      Student project demo: this login only changes the page.
+      It does not create or verify a real account.
+    </p>
+  </div>
+</section>
+
+<!-- PAGE 2: TRANSLATOR -->
+<section id="translatorPage" class="page">
+  <h1>Live Sign Language Translator</h1>
+  <p class="subtitle">
+    Allow camera access, show your hand clearly, and keep it inside
+    the camera frame. Recognized gestures will appear as text.
+  </p>
+
+  <div class="grid">
+
+    <div class="card">
+      <h2>📷 Live Camera</h2>
+
+      <div class="camera-box">
+        <div id="cameraPlaceholder">
+          Camera is not started.<br>
+          Press "Start Camera" and allow access.
+        </div>
+        <video id="video" autoplay playsinline muted hidden></video>
+      </div>
+
+      <div class="status" id="cameraStatus">
+        Status: Camera not started
+      </div>
+
+      <div class="controls">
+        <button id="startBtn" class="primary"
+                onclick="startCamera()">Start Camera</button>
+        <button class="secondary" onclick="stopCamera()">Stop Camera</button>
+      </div>
+
+      <p class="small">
+        Camera access works on localhost or an HTTPS website.
+        Your browser will ask permission before using the camera.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>💬 Translation Output</h2>
+      <div class="output" id="currentSign" aria-live="polite">
+        Waiting for a hand sign...
+      </div>
+
+      <div class="status">
+        <strong>Recognized sign:</strong>
+        <span id="detectedSign">None</span><br><br>
+
+        <strong>Confidence:</strong>
+        <span id="confidence">—</span>
+      </div>
+
+      <label for="sentence">Translated sentence</label>
+      <div id="sentence" class="output" aria-live="polite"
+           style="margin-top:10px;font-size:17px">
+        Your translated sentence will appear here.
+      </div>
+
+      <div class="controls">
+        <button class="primary" onclick="speakText()">
+          🔊 Speak Text
+        </button>
+        <button class="secondary" onclick="clearText()">
+          Clear Text
+        </button>
+      </div>
+
+      <p class="small">
+        A gesture must remain stable for a short time before it is
+        added. Repeat gestures are temporarily filtered to prevent
+        excessive repeated words.
+      </p>
+    </div>
+
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>🔤 Sign Alphabet A–Z</h2>
+      <p class="small" style="margin:0 0 15px">
+        Reference alphabet. Showing a letter here does not mean the
+        camera model can recognize it yet.
+      </p>
+
+      <div class="alphabet" id="alphabet"></div>
+
+      <p class="small">
+        Accurate A–Z recognition needs a trained alphabet model.
+        Some letters use motion, and several hand shapes look similar.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>🤟 Supported Camera Gestures</h2>
+      <div class="sign-list">
+        <button class="sign-button" onclick="addPhrase('I Love You')">
+          🤟 I Love You
+        </button>
+        <button class="sign-button" onclick="addPhrase('Hello')">
+          👋 Hello
+        </button>
+        <button class="sign-button" onclick="addPhrase('Bye')">
+          👋 Bye
+        </button>
+        <button class="sign-button" onclick="addPhrase('Good / Yes')">
+          👍 Good / Yes
+        </button>
+        <button class="sign-button" onclick="addPhrase('No / Dislike')">
+          👎 No / Dislike
+        </button>
+        <button class="sign-button" onclick="addPhrase('Peace')">
+          ✌️ Peace
+        </button>
+        <button class="sign-button" onclick="addPhrase('Stop')">
+          ✊ Stop
+        </button>
+        <button class="sign-button" onclick="addPhrase('Pointing Up')">
+          ☝️ Pointing Up
+        </button>
+      </div>
+
+      <p class="small">
+        These buttons add example phrases manually. They are useful
+        for testing the text and speech features; they do not simulate
+        camera detection.
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🚨 Emergency Communication</h2>
+    <p class="subtitle">
+      Quickly prepare a message if you need assistance.
+      These buttons are communication shortcuts, not verified
+      emergency gesture recognition.
+    </p>
+
+    <div class="sign-list">
+      <button class="sign-button"
+              onclick="addPhrase('HELP ME! I NEED ASSISTANCE.')">
+        🆘 Help Me
+      </button>
+      <button class="sign-button"
+              onclick="addPhrase('I NEED MEDICAL HELP.')">
+        🏥 Medical Help
+      </button>
+      <button class="sign-button"
+              onclick="addPhrase('PLEASE CALL THE POLICE.')">
+        🚔 Call Police
+      </button>
+      <button class="sign-button"
+              onclick="addPhrase('I AM IN DANGER. PLEASE HELP ME.')">
+        ⚠️ I Am in Danger
+      </button>
+    </div>
+
+    <p class="small">
+      Emergency shortcuts do not contact emergency services
+      automatically. If you are in immediate danger, contact the
+      appropriate local emergency service directly.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>📜 Recent Recognized Signs</h2>
+    <ol id="history" style="padding-left:22px;line-height:2">
+      <li>No signs recognized yet.</li>
+    </ol>
+  </div>
+</section>
+
+<footer>
+  SignSpeak — Live Sign Language Translation Project
+</footer>
+
+<!-- MediaPipe vision library -->
+<script type="module">
+import {
+  GestureRecognizer,
+  FilesetResolver
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+
+const video = document.getElementById("video");
+const placeholder = document.getElementById("cameraPlaceholder");
+const cameraStatus = document.getElementById("cameraStatus");
+const currentSign = document.getElementById("currentSign");
+const detectedSign = document.getElementById("detectedSign");
+const confidence = document.getElementById("confidence");
+const sentence = document.getElementById("sentence");
+const history = document.getElementById("history");
+const startBtn = document.getElementById("startBtn");
+
+let recognizer = null;
+let stream = null;
+let running = false;
+let lastVideoTime = -1;
+let animationId = null;
+let lastCandidate = "";
+let candidateSince = 0;
+let lastAddedSign = "";
+let lastAddedTime = 0;
+let words = [];
+let historyItems = [];
+
+const translations = {
+  "ILoveYou": "I Love You",
+  "Open_Palm": "Open Palm",
+  "Closed_Fist": "Closed Fist",
+  "Thumb_Up": "Good / Yes",
+  "Thumb_Down": "No / Dislike",
+  "Victory": "Peace",
+  "Pointing_Up": "Pointing Up"
+};
+
+const alphabet = document.getElementById("alphabet");
+"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(letter => {
+  const div = document.createElement("div");
+  div.className = "letter";
+  div.textContent = letter;
+  alphabet.appendChild(div);
+});
+
+document.getElementById("loginForm").addEventListener("submit", e => {
+  e.preventDefault();
+
+  const name = document.getElementById("username").value.trim();
+
+  if (!name) return;
+
+  document.getElementById("welcome").textContent = "Hi, " + name;
+  document.getElementById("loginPage").classList.remove("active");
+  document.getElementById("translatorPage").classList.add("active");
+  document.getElementById("logoutBtn").hidden = false;
+});
+
+window.logout = async function() {
+  await window.stopCamera();
+  document.getElementById("translatorPage").classList.remove("active");
+  document.getElementById("loginPage").classList.add("active");
+  document.getElementById("logoutBtn").hidden = true;
+  document.getElementById("welcome").textContent = "";
+};
+
+async function createRecognizer() {
+  if (recognizer) return recognizer;
+
+  cameraStatus.textContent = "Loading hand gesture recognition model...";
+
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+  );
+
+  recognizer = await GestureRecognizer.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath:
+        "https://storage.googleapis.com/mediapipe-models/" +
+        "gesture_recognizer/gesture_recognizer/float16/1/" +
+        "gesture_recognizer.task",
+      delegate: "GPU"
+    },
+    runningMode: "VIDEO",
+    numHands: 2
+  });
+
+  return recognizer;
+}
+
+window.startCamera = async function() {
+  if (running) return;
+
+  startBtn.disabled = true;
+
+  try {
+    if (!navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia) {
+      throw new Error(
+        "Camera access requires HTTPS or localhost and a supported browser."
+      );
+    }
+
+    // Ask the user for camera permission.
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: {
+        facingMode: "user",
+        width: { ideal: 640 },
+        height: { ideal: 480 }
+      }
+    });
+
+    video.srcObject = stream;
+    await video.play();
+
+    placeholder.hidden = true;
+    video.hidden = false;
+
+    await createRecognizer();
+
+    running = true;
+    lastVideoTime = -1;
+    cameraStatus.textContent =
+      "Camera active. Show one hand clearly to the camera.";
+
+    detectLoop();
+
+  } catch (error) {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      stream = null;
+    }
+
+    video.srcObject = null;
+    video.hidden = true;
+    placeholder.hidden = false;
+
+    cameraStatus.textContent =
+      "Could not start: " + (error.message || "Unknown error") +
+      ". Check camera permission and internet connection.";
+
+    console.error(error);
+  } finally {
+    startBtn.disabled = false;
+  }
+};
+
+function detectLoop() {
+  if (!running) return;
+
+  if (video.readyState >= 2 && video.currentTime !== lastVideoTime) {
+    lastVideoTime = video.currentTime;
+
+    try {
+      const result = recognizer.recognizeForVideo(
+        video,
+        performance.now()
+      );
+
+      processResult(result);
+    } catch (error) {
+      console.error("Recognition error:", error);
+    }
+  }
+
+  animationId = requestAnimationFrame(detectLoop);
+}
+
+function processResult(result) {
+  const gestures = result.gestures || [];
+
+  if (!gestures.length || !gestures[0].length) {
+    detectedSign.textContent = "No hand gesture";
+    confidence.textContent = "—";
+    currentSign.textContent = "Show your hand clearly in the frame.";
+    lastCandidate = "";
+    return;
+  }
+
+  const top = gestures[0][0];
+  const rawName = top.categoryName;
+  const score = top.score || 0;
+
+  detectedSign.textContent = translations[rawName] || rawName;
+  confidence.textContent = (score * 100).toFixed(1) + "%";
+
+  if (score < 0.65) {
+    currentSign.textContent = "Gesture confidence too low.";
+    lastCandidate = "";
+    return;
+  }
+
+  const translated = translations[rawName];
+
+  if (!translated) {
+    currentSign.textContent = "Gesture detected: " + rawName;
+    return;
+  }
+
+  currentSign.textContent = translated;
+
+  // Require the same gesture to remain stable for 700 ms.
+  const now = performance.now();
+
+  if (lastCandidate !== rawName) {
+    lastCandidate = rawName;
+    candidateSince = now;
+    return;
+  }
+
+  if (now - candidateSince >= 700 &&
+      (lastAddedSign !== rawName || now - lastAddedTime > 1800)) {
+    addPhrase(translated);
+    lastAddedSign = rawName;
+    lastAddedTime = now;
+    candidateSince = now;
+  }
+}
+
+window.stopCamera = async function() {
+  running = false;
+
+  if (animationId !== null) {
+    cancelAnimationFrame(animationId);
+    animationId = null;
+  }
+
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+    stream = null;
+  }
+
+  video.srcObject = null;
+  video.hidden = true;
+  placeholder.hidden = false;
+
+  cameraStatus.textContent = "Camera stopped.";
+  detectedSign.textContent = "None";
+  confidence.textContent = "—";
+  currentSign.textContent = "Waiting for a hand sign...";
+  lastCandidate = "";
+  startBtn.disabled = false;
+};
+
+window.addPhrase = function(phrase) {
+  if (!phrase) return;
+
+  words.push(phrase);
+  sentence.textContent = words.join(" ");
+
+  historyItems.unshift(phrase);
+  historyItems = historyItems.slice(0, 10);
+
+  history.replaceChildren();
+
+  historyItems.forEach(item => {
+    const li = document.createElement("li");
+    li.textContent = item;
+    history.appendChild(li);
+  });
+};
+
+window.clearText = function() {
+  words = [];
+  historyItems = [];
+  sentence.textContent = "Your translated sentence will appear here.";
+  history.replaceChildren();
+
+  const li = document.createElement("li");
+  li.textContent = "No signs recognized yet.";
+  history.appendChild(li);
+};
+
+window.speakText = function() {
+  const text = words.join(" ");
+
+  if (!text) {
+    alert("Recognize or select a sign before using voice output.");
+    return;
+  }
+
+  if (!("speechSynthesis" in window)) {
+    alert("Text-to-speech is not supported in this browser.");
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "en-IN";
+  utterance.rate = 0.9;
+
+  window.speechSynthesis.speak(utterance);
+};
+
+window.addEventListener("beforeunload", () => {
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+  }
+});
+</script>
+
+</body>
+</html>
